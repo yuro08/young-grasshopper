@@ -1,0 +1,8 @@
+export const configured=()=>!!(process.env.SUPABASE_URL&&process.env.SUPABASE_ANON_KEY);
+export function sameOrigin(req){try{return new URL(req.headers.origin).origin===new URL(process.env.APP_URL||`http://${req.headers.host}`).origin;}catch{return false;}}
+export function cookies(req){return Object.fromEntries((req.headers.cookie||'').split(';').map(x=>{const i=x.indexOf('=');return i<0?['','']:[x.slice(0,i).trim(),decodeURIComponent(x.slice(i+1))];}));}
+export function setSession(res,data){const secure=process.env.NODE_ENV==='production'||process.env.APP_URL?.startsWith('https:');const base=`Path=/; HttpOnly; SameSite=Lax${secure?'; Secure':''}`;res.setHeader('Set-Cookie',[`yg_access=${encodeURIComponent(data?.access_token||'')}; Max-Age=${data?3600:0}; ${base}`,`yg_refresh=${encodeURIComponent(data?.refresh_token||'')}; Max-Age=${data?2592000:0}; ${base}`]);}
+export async function provider(route,{method='GET',body,token}={}){const r=await fetch(`${process.env.SUPABASE_URL}${route}`,{method,signal:AbortSignal.timeout(12000),headers:{apikey:process.env.SUPABASE_ANON_KEY,'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},...(body?{body:JSON.stringify(body)}:{})});let data;try{data=await r.json();}catch{data=null;}return {ok:r.ok,status:r.status,data};}
+export async function identity(req){if(!configured())return null;const token=cookies(req).yg_access;if(!token)return null;const r=await provider('/auth/v1/user',{token});return r.ok&&r.data?.id?{user:r.data,token}:null;}
+export function parseBody(req){return typeof req.body==='string'?JSON.parse(req.body):req.body||{};}
+export function failure(res,status,message){return res.status(status).json({error:message});}

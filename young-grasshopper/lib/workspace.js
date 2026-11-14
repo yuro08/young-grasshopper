@@ -1,0 +1,2 @@
+import{validateCard}from'../public/core.js';
+export function validState(s){return !!s&&Array.isArray(s.cards)&&s.cards.length<=10000&&s.cards.every(c=>validateCard(c)&&typeof c.id==='string'&&c.id.length<=100&&['due','interval','reviews','lapses'].every(k=>Number.isFinite(c[k])&&c[k]>=0)&&typeof c.suspended==='boolean')&&Array.isArray(s.logs)&&s.logs.length<=100000&&s.logs.every(l=>Number.isFinite(l.at)&&typeof l.cardId==='string'&&['again','hard','good','easy'].includes(l.rating))&&Number.isInteger(s.goal)&&s.goal>=1&&s.goal<=100;}
